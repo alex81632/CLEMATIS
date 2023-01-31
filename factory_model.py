@@ -50,11 +50,12 @@ print("[INFO] Starting dynamic model...")
 system = DynamicManufacturing(g, args["seed"])
 
 # run the dynamic simulation and output the results to the defined medium
-with open("event_log.txt", "w") as u:
-	with sys.stdout if args["output"] == "-" else open(args["output"], "w") as f:
-		production = 0
-		runs = 0
-		while production < 100:
-			print("[INFO] run: {}".format(runs))
-			production = production + system.iterate(f, args["output"], event_log=u)[0]
-			runs = runs + 1
+with open("event_log.txt", "w") as event_log:
+	with open("log.txt", "w") as u:
+		with sys.stdout if args["output"] == "-" else open(args["output"], "w") as f:
+			production = 0
+			runs = 0
+			while production < 100:
+				print("[INFO] run: {}".format(runs))
+				production = production + system.iterate(f, args["output"], event_log=event_log, log=u)[0]
+				runs = runs + 1

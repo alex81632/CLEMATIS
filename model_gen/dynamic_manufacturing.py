@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from igraph import *
+from datetime import datetime, timedelta
 
 class DynamicManufacturing:
 
@@ -14,6 +15,7 @@ class DynamicManufacturing:
 		self.initial_buffer = initial_buffer
 		self.initial_tokens = [i+1 for i in range(initial_buffer)]
 		self.tokens = {i:[] for i in range(network.vcount())}
+		self.timeST = datetime(2023, 9, 24, 9, 30, 35)
 
 		self.buffer = np.array([0.0 for i in range(network.vcount())])
 		self.buffer_occupation = np.array([0.0 for i in range(network.vcount())])
@@ -29,7 +31,7 @@ class DynamicManufacturing:
 		# the numbers generated are smaller than 1
 		self.rng = np.random.default_rng(seed=seed)
 
-	def iterate(self, output, write2file=False, event_log = None):
+	def iterate(self, output, write2file=False, event_log = None ,log = None):
 		# output is a file to output data from the simulation
 
 		# initialize production
@@ -38,8 +40,8 @@ class DynamicManufacturing:
 		# write the header to the file
 		if self.time == 0:
 			output.write("time,vertex,state,state_id,buffer_occupation,production_step\n")
-			event_log.write("case_id,previous_node,actual_node,time_stamp,product_id,time\n")
-			#output.write("time,starved,blocked,working\n")
+			log.write("case_id,previous_node,actual_node,time_stamp,product_id,time\n")
+			event_log.write("case_id,activity_id,time_stamp,product_id\n")
 
 		# increase time
 		self.time = self.time + 1
@@ -132,20 +134,20 @@ class DynamicManufacturing:
 					self.buffer[i] = self.buffer[i] - production
 				else:
 					self.initial_buffer = self.initial_buffer - production
-					self.get_new_tokens(i, production, event_log=event_log)
+					self.get_new_tokens(i, production, log=log, event_log=event_log)
 
 				# increase the amount of product in the buffer of the node it is providing
 				if len(out_nodes) > 0:
 					# find the out_node with minimum occupation on its buffer
 					index = np.argmin(self.buffer[out_nodes])
 					node_to_feed = out_nodes[index]
-					self.pass_along_tokens(i, production, node_to_feed, event_log=event_log)
+					self.pass_along_tokens(i, production, node_to_feed, log=log, event_log=event_log)
 					self.buffer[node_to_feed] = np.minimum(buffer_size[node_to_feed], self.buffer[node_to_feed]+production)
 				# if the node does not have outgoing edges, the production is
 				# the production of the whole process
 				else:
 					total_production = total_production + production
-					self.eliminates_tokens(i, production, event_log=event_log)
+					self.eliminates_tokens(i, production, log=log, event_log=event_log)
 
 				self.buffer_occupation[i] = self.buffer[i]/buffer_size[i]
 
@@ -156,42 +158,52 @@ class DynamicManufacturing:
 		#return total_production, zero_count, one_count, two_count, state_array
 		return total_production, zero_count, one_count, two_count, state_array
 	
-	def get_new_tokens(self, node, amount, event_log):
+	def get_new_tokens(self, node, amount, log, event_log):
 		"""
 		Generate new tokens for the initial buffer of a node
 		"""
 		self.timeStamp = self.timeStamp + 1
+		# add a minute at timeST
+		self.timeST = self.timeST + timedelta(minutes=1)
 		for i in range(amount):
 			if len(self.initial_tokens) == 0:
 				break
 			else:
-				event_log.write(f"{self.timeStamp},{-1},{node},{self.timeStamp},{self.initial_tokens[0]},{self.time}\n")
+				log.write(f"{self.timeStamp},{-1},{node},{self.timeStamp},{self.initial_tokens[0]},{self.time}\n")
+				event_log.write(f"{self.initial_tokens[0]},{node},{self.timeST},{self.initial_tokens[0]}\n")
 				self.tokens[node].append(self.initial_tokens[0])
 				del self.initial_tokens[0]
 
-	def pass_along_tokens(self, node, amount, node_to_feed, event_log):
+	def pass_along_tokens(self, node, amount, node_to_feed, log, event_log):
 		"""
 		Pass tokens along the network
 		"""
 		self.timeStamp = self.timeStamp + 1
+		# add a minute at timeST
+		self.timeST = self.timeST + timedelta(minutes=1)
 		for i in range(amount):
 			if len(self.tokens[node]) == 0:
 				break
 			else:
-				event_log.write(f"{self.timeStamp},{node},{node_to_feed},{self.timeStamp},{self.tokens[node][0]},{self.time}\n")
+				log.write(f"{self.timeStamp},{node},{node_to_feed},{self.timeStamp},{self.tokens[node][0]},{self.time}\n")
+				# print timeST in the format: 2019-01-01 00:00:00
+				event_log.write(f"{self.tokens[node][0]},{node_to_feed},{self.timeST},{self.tokens[node][0]}\n")				
 				self.tokens[node_to_feed].append(self.tokens[node][0])
 				del self.tokens[node][0]
 
-	def eliminates_tokens(self, node, amount, event_log):
+	def eliminates_tokens(self, node, amount, log, event_log):
 		"""
 		Eliminate tokens from the network
 		"""
 		self.timeStamp = self.timeStamp + 1
+		# add a minute at timeST
+		self.timeST = self.timeST + timedelta(minutes=1) 
 		for i in range(amount):
 			if len(self.tokens[node]) == 0:
 				break
 			else:
-				event_log.write(f"{self.timeStamp},{node},{-1},{self.timeStamp},{self.tokens[node][0]},{self.time}\n")
+				log.write(f"{self.timeStamp},{node},{-1},{self.timeStamp},{self.tokens[node][0]},{self.time}\n")
+				event_log.write(f"{self.tokens[node][0]},End of Line,{self.timeST},{self.tokens[node][0]}\n")
 				del self.tokens[node][0]
 
 
