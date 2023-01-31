@@ -6,7 +6,7 @@ from igraph import *
 from model_gen import ModelGeneratorNS
 from model_gen import DynamicManufacturing
 # Para rodar basta inserir na linha de comando:
-# python factory_model.py -n 20 -s 5 -r 2 -o output
+# python factory_model.py -n 20 -s 5 -r 2 -o output.txt
 
 
 # argument parser
@@ -50,10 +50,11 @@ print("[INFO] Starting dynamic model...")
 system = DynamicManufacturing(g, args["seed"])
 
 # run the dynamic simulation and output the results to the defined medium
-with sys.stdout if args["output"] == "-" else open(args["output"], "w") as f:
-	production = 0
-	runs = 0
-	while production < 100:
-		print("[INFO] run: {}".format(runs))
-		production = production + system.iterate(f, args["output"])[0]
-		runs = runs + 1
+with open("event_log.txt", "w") as u:
+	with sys.stdout if args["output"] == "-" else open(args["output"], "w") as f:
+		production = 0
+		runs = 0
+		while production < 100:
+			print("[INFO] run: {}".format(runs))
+			production = production + system.iterate(f, args["output"], event_log=u)[0]
+			runs = runs + 1
