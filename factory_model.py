@@ -47,7 +47,7 @@ layout = g.layout("kamada_kawai")
 plot(g, layout=layout)
 
 print("[INFO] Starting dynamic model...")
-system = DynamicManufacturing(g, args["seed"])
+system = DynamicManufacturing(g, args["seed"], rng =np.random.default_rng( args["seed"]))
 
 # run the dynamic simulation and output the results to the defined medium
 with open("event_log.txt", "w") as event_log:
@@ -56,6 +56,7 @@ with open("event_log.txt", "w") as event_log:
 			production = 0
 			runs = 0
 			while production < 100:
-				print("[INFO] run: {}".format(runs))
+				print("[INFO] run: {}, production: {}".format(runs, production))
+
 				production = production + system.iterate(f, args["output"], event_log=event_log, log=u)[0]
 				runs = runs + 1
