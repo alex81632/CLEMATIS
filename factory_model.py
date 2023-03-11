@@ -1,6 +1,7 @@
 import sys
 import argparse
 import numpy as np
+import pandas as pd
 from igraph import *
 #from model_gen import ModelGenerator
 from model_gen import ModelGeneratorNS
@@ -60,3 +61,15 @@ with open("event_log.txt", "w") as event_log:
 
 				production = production + system.iterate(f, args["output"], event_log=event_log, log=u)[0]
 				runs = runs + 1
+
+print("[INFO] Generating event log...")
+
+df = pd.read_csv('event_log.txt', sep=',',header=0)
+df = df.drop(columns=['product_id'])
+df = df.sort_values(by=['case_id', 'time_stamp'])
+df['time_stamp_out'] = df['time_stamp'].shift(-1)
+df = df[df.activity_id != "End of Line"]
+df['product_id'] = df['case_id']
+df.to_csv('event_log.txt', sep=',', index=False)
+
+print("[INFO] Done!")

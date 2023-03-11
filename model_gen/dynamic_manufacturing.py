@@ -71,6 +71,20 @@ class DynamicManufacturing:
 			in_nodes = [self.network.get_edgelist()[edge.index][0] for edge in self.network.vs[i].in_edges()]
 			out_nodes = [self.network.get_edgelist()[edge.index][1] for edge in self.network.vs[i].out_edges()]
 
+			# if an in node is not with the buffer full, fill it
+			if len(in_nodes) == 0:
+				gap = buffer_size[i] - int(self.buffer[i])
+				gap = min(gap, len(self.initial_tokens))
+				if gap > 0:
+					self.initial_buffer = self.initial_buffer - gap
+					self.buffer[i] = self.buffer[i] + gap
+					self.get_new_tokens(i, gap, log=log, event_log=event_log)
+					print("gap: ", gap)
+					print("initial_buffer: ", self.initial_buffer)
+					print("buffer: ", self.buffer[i])
+					print("tokens: ", self.tokens[i])
+
+
 			# check if any of the elements feeded by node i has space to receive
 			# materials. If any node has possibility to recceive materials, node i
 			# can produce them.
@@ -84,16 +98,6 @@ class DynamicManufacturing:
 				if (state_array[production_step[i]] == 2):
 					# change it only if it's was working, to blocked
 					state_array[production_step[i]] = 1;
-
-			# if it is a node in the first production step, it is not starved
-			elif len(in_nodes) == 0:
-				if self.initial_buffer > 0:
-					self.state[i] = "working"
-					self.state_id[i] = 2
-				else:
-					self.state[i] = "starved"
-					self.state_id[i] = 0
-				# 0 -> starved / 1 -> blocked / 2 -> working
 
 			# if it does not have any raw materials, it is starved
 			elif self.buffer[i] == 0:
@@ -143,14 +147,10 @@ class DynamicManufacturing:
 					for j in range(prate[i], len(self.tokens[i])):
 						self.time_entered[self.tokens[i][j]] = self.timeST
 
-				# if it has incoming edges, it can make the production rate
+				# it can make the production rate
 				# only if it has enough material on its buffer
-				if len(in_nodes) > 0:
-					production = min(production, self.buffer[i])
-				else:
-					production = prate[i]
-					production = min(production, self.initial_buffer)
-
+				production = min(production, self.buffer[i])
+				
 				# its production can be at maximum the amount available in the
 				# buffers of the nodes ahead
 				if len(out_nodes) > 0:
@@ -159,11 +159,8 @@ class DynamicManufacturing:
 				if production > 0:
 					# produce!
 					# decrease its own buffer by the amount of product it make
-					if len(in_nodes) > 0:
-						self.buffer[i] = self.buffer[i] - production
-					else:
-						self.initial_buffer = self.initial_buffer - production
-						self.get_new_tokens(i, production, log=log, event_log=event_log)
+					
+					self.buffer[i] = self.buffer[i] - production
 
 					# increase the amount of product in the buffer of the node it is providing
 					if len(out_nodes) > 0:
