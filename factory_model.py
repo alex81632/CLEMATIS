@@ -57,7 +57,7 @@ with open("event_log.txt", "w") as event_log:
 			production = 0
 			runs = 0
 			while production < 100:
-				print("[INFO] run: {}, production: {}".format(runs, production))
+				print("[INFO] minuts passed: {}, production: {}".format(runs, production))
 
 				production = production + system.iterate(f, args["output"], event_log=event_log, log=u)[0]
 				runs = runs + 1

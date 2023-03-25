@@ -79,11 +79,6 @@ class DynamicManufacturing:
 					self.initial_buffer = self.initial_buffer - gap
 					self.buffer[i] = self.buffer[i] + gap
 					self.get_new_tokens(i, gap, log=log, event_log=event_log)
-					print("gap: ", gap)
-					print("initial_buffer: ", self.initial_buffer)
-					print("buffer: ", self.buffer[i])
-					print("tokens: ", self.tokens[i])
-
 
 			# check if any of the elements feeded by node i has space to receive
 			# materials. If any node has possibility to recceive materials, node i
@@ -182,8 +177,7 @@ class DynamicManufacturing:
 				if(len(self.tokens[i]) > 0):
 					self.buffer_occupation[i] = int((self.timeST - self.time_entered[self.tokens[i][0]]).total_seconds()/60)/self.production_time[i]
 			
-			self.buffer_occupation[i] = min(1.0, self.buffer_occupation[i])
-				
+			self.buffer_occupation[i] = min(1.0, self.buffer_occupation[i])		
 
 			if write2file:
 				output.write("{},{},{},{},{},{}\n".format(self.time, ids[i], self.state[i], self.state_id[i], self.buffer_occupation[i], production_step[i]))
@@ -235,7 +229,3 @@ class DynamicManufacturing:
 				log.write(f"{self.timeStamp},{node},{-1},{self.timeStamp},{self.tokens[node][0]},{self.time}\n")
 				event_log.write(f"{self.tokens[node][0]},End of Line,{self.timeST},{self.tokens[node][0]}\n")
 				del self.tokens[node][0]
-
-
-
-
